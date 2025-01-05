@@ -53,10 +53,13 @@ jobs:
 
       - name: Wait for container to be ready
         run: |
-          for i in {1..10}; do
-            if curl -s \
-              -H "Authorization: Bearer $ACTIONS_ID_TOKEN" \
-              http://localhost:8080/test | grep "ok"; then
+          TOKEN=$(curl -s \
+            -H "Accept: application/json; api-version=2.0" \
+            -H "Content-Type: application/json" -d "{}"  \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=ghat" | jq -r '.value')
+          for i in {1..5}; do
+            if curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/test | grep "ok"; then
               echo "Auth passed!"
               exit 0
             fi

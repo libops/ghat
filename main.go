@@ -21,8 +21,11 @@ func main() {
 	r.Use(handler.JWTAuthMiddleware)
 	r.HandleFunc("/repo/admin", wh.RepoAdminToken).Methods("POST")
 	r.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`ok`))
+		_, err := w.Write([]byte(`ok`))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			slog.Error("Unable to write for healthcheck")
+		}
 	}).Methods("GET")
 
 	port := os.Getenv("PORT")

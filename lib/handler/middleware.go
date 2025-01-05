@@ -17,7 +17,7 @@ type contextKey string
 
 const claimsKey contextKey = "claims"
 
-const githubKeysURL = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
+const githubKeysURL = "https://token.actions.githubusercontent.com/.well-known/jwks"
 
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -76,25 +76,30 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 func verifyJWT(tokenString string) (*GitHubClaims, error) {
 	keySet, err := fetchJWKS()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Unable to fetch JWKS: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	token, err := jwt.Parse([]byte(tokenString), jwt.WithKeySet(keySet), jwt.WithContext(ctx))
+	token, err := jwt.Parse(
+		[]byte(tokenString),
+		jwt.WithKeySet(keySet),
+		jwt.WithContext(ctx),
+		jwt.WithVerify(true))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Unable to parse token: %v", err)
 	}
 
-	var claims GitHubClaims
 	if err := validateClaims(token); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Unable to validate claims: %v", err)
 	}
 	rawClaims, err := json.Marshal(token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal claims: %v", err)
 	}
+
+	var claims GitHubClaims
 	if err := json.Unmarshal(rawClaims, &claims); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal claims: %v", err)
 	}
@@ -115,16 +120,33 @@ func validateClaims(token jwt.Token) error {
 		return fmt.Errorf("invalid issuer: %v", iss)
 	}
 
-	if time.Now().After(token.Expiration()) {
-		return fmt.Errorf("token has expired")
+	claims := map[string]string{
+		"aud":              "https://github.com/libops",
+		"repository_owner": "libops",
+	}
+	for c, expectedValue := range claims {
+		claim, ok := token.Get(c)
+		if !ok {
+			return fmt.Errorf("%s claim not found", c)
+		}
+		found := false
+		switch v := claim.(type) {
+		case string:
+			if strings.ToLower(v) == expectedValue {
+				found = true
+			}
+		case []string:
+			for _, claimValue := range v {
+				if strings.ToLower(claimValue) == expectedValue {
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			return fmt.Errorf("invalid %s: %v", c, claim)
+		}
 	}
 
-	ro, ok := token.Get("repository_owner")
-	if !ok {
-		return fmt.Errorf("repository_owner claim not found")
-	}
-	if strings.ToLower(ro.(string)) != "libops" {
-		return fmt.Errorf("invalid repository_owner: %v", iss)
-	}
 	return nil
 }
