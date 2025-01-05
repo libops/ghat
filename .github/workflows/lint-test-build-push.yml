@@ -1,0 +1,111 @@
+name: build-push-ar
+on:
+  push:
+jobs:
+  test:
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5
+        with:
+          go-version: '>=1.23.4'
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8 # v6
+        with:
+          version: latest
+      
+      - name: Install dependencies
+        run: go get .
+
+      - name: Build
+        run: go build -v
+
+      - name: Test with the Go CLI
+        run: go test -v -race ./...
+  integration-test:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: build
+        run: docker build -t ghat:latest .
+
+      - name: run
+        run: |
+          echo "${{ secrets.APP_KEY }}" | base64 -d > /tmp/app.key
+
+          docker run -d \
+            -e GITHUB_APP_ID="${{ secrets.GH_APP_ID }}" \
+            -e GITHUB_INSTALL_ID="${{ secrets.GH_INSTALL_ID }}" \
+            -e GITHUB_APP_PRIVATE_KEY=/tmp/app.key \
+            -v /tmp/app.key:/tmp/app.key \
+            --rm \
+            --name ghat \
+            -p 8080:8080 \
+            ghat:latest
+
+      - name: Wait for container to be ready
+        run: |
+          for i in {1..10}; do
+            if curl -s \
+              -H "Authorization: Bearer $ACTIONS_ID_TOKEN" \
+              http://localhost:8080/test | grep "ok"; then
+              echo "Auth passed!"
+              exit 0
+            fi
+            echo "Waiting for container to be ready..."
+            sleep 2
+          done
+          echo "Container did not start in time!" && exit 1
+
+      - name: Make sure no JWT fails
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/test)
+          if [ "$response" -ne 401 ]; then
+            echo "Failed: Expected 401 Unauthorized without Authorization header, got $response"
+            exit 1
+          else
+            echo "Pass: 401 Unauthorized without Authorization header"
+          fi
+
+      - name: Make sure bad JWT fails
+        run: |
+          fake_jwt=$(echo -n '{"alg":"RS256","typ":"JWT"}' | base64 | tr -d '=')
+          fake_payload=$(echo -n '{"sub":"fake","aud":"fake","iss":"https://fake-issuer"}' | base64 | tr -d '=')
+          fake_signature=$(echo -n "fake_signature" | base64 | tr -d '=')
+          fake_token="$fake_jwt.$fake_payload.$fake_signature"
+
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $fake_token" \
+            http://localhost:8080/test)
+
+          if [ "$response" -ne 401 ]; then
+            echo "Failed: Expected 401 Unauthorized for non-GitHub signed JWT, got $response"
+            exit 1
+          else
+            echo "Pass: 401 Unauthorized for non-GitHub signed JWT"
+          fi
+
+      - name: Stop and remove container
+        if: always()
+        run: |
+          docker logs ghat
+          rm /tmp/app.key
+          docker stop ghat
+
+  build-push-ar:
+    needs: [test, integration-test]
+    uses: libops/actions/.github/workflows/build-push.yml@main
+    with:
+      image: "shared/ghat"
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
