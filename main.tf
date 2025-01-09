@@ -48,7 +48,7 @@ module "ghat" {
   containers = tolist([
     {
       name           = "ghat",
-      image          = "us-docker.pkg.dev/${var.project}/shared/ghat:main",
+      image          = "us-docker.pkg.dev/${var.project}/private/ghat:main",
       port           = 8080
       liveness_probe = "/healthcheck"
       memory         = "512Mi"

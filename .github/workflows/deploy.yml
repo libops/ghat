@@ -108,7 +108,7 @@ jobs:
     needs: [test, integration-test]
     uses: libops/actions/.github/workflows/build-push.yml@main
     with:
-      image: "shared/ghat"
+      image: "private/ghat"
     permissions:
       contents: read
       id-token: write
