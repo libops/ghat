@@ -1,4 +1,4 @@
-name: build-push-ar
+name: deploy
 on:
   push:
 jobs:
@@ -26,6 +26,7 @@ jobs:
 
       - name: Test with the Go CLI
         run: go test -v -race ./...
+
   integration-test:
     permissions:
       contents: read
@@ -57,7 +58,7 @@ jobs:
             -H "Accept: application/json; api-version=2.0" \
             -H "Content-Type: application/json" -d "{}"  \
             -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=ghat" | jq -r '.value')
+            "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r '.value')
           for i in {1..5}; do
             if curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/test | grep "ok"; then
               echo "Auth passed!"
@@ -112,3 +113,62 @@ jobs:
       contents: read
       id-token: write
     secrets: inherit
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: [build-push-ar]
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-24.04
+    env:
+      TF_VAR_project: ${{ secrets.GCLOUD_PROJECT }}
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.7
+
+    - name: lint
+      run: terraform fmt **/*.tf
+
+    - uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: 'latest'
+
+    - id: 'auth'
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ secrets.GCLOUD_OIDC_POOL }}
+        service_account: ${{ secrets.GSA }}
+        token_format: 'access_token'
+
+    - name: Configure gcloud
+      run: |
+        gcloud config set project ${{ secrets.GCLOUD_PROJECT }}
+        gcloud config set disable_prompts true
+
+    - uses: 'docker/login-action@v3'
+      name: 'Docker login'
+      with:
+        registry: 'us-docker.pkg.dev'
+        username: 'oauth2accesstoken'
+        password: '${{ steps.auth.outputs.access_token }}'
+
+    - name: Terraform Init
+      run: terraform init -upgrade 2>&1 > /tmp/terraform.log
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve 2>&1 >> /tmp/terraform.log
+
+    - name: Upload logs as artifacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: terraform.log
+        path: /tmp/terraform.log
+
+    - name: cleanup
+      if: ${{ always() }}
+      run: rm /tmp/terraform.log
