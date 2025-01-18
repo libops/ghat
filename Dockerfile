@@ -6,12 +6,14 @@ RUN adduser -S -G nobody ghat
 
 COPY . ./
 
-RUN chown -R ghat:nobody /app
+RUN mkdir -p /vault/secrets && \
+  chown -R ghat:nobody /app /vault
 
-RUN go mod download && \
+RUN apk add --no-cache openssl bash && \
+  go mod download && \
   go build -o /app/ghat && \
   go clean -cache -modcache
 
 USER ghat
 
-ENTRYPOINT ["/app/ghat"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
