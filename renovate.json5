@@ -5,41 +5,23 @@
   ],
   packageRules: [
     {
+      matchPackageNames: [
+        'hashicorp/terraform',
+      ],
+      enabled: false,
+    },
+    {
       matchUpdateTypes: [
         'minor',
         'patch',
         'digest',
       ],
-      groupName: 'all non-major dependencies',
+      groupName: 'bump-dependencies',
       schedule: [
         'after 10pm on Friday',
       ],
       matchPackageNames: [
         '*',
-      ],
-    },
-    {
-      matchManagers: [
-        'gomod',
-      ],
-      postUpdateOptions: [
-        'gomodTidy',
-      ],
-      groupName: 'gomod updates',
-    },
-    {
-      matchManagers: [
-        'dockerfile',
-      ],
-      groupName: 'Dockerfile updates',
-    },
-    {
-      matchManagers: [
-        'github-actions',
-      ],
-      groupName: 'GitHub Actions updates',
-      schedule: [
-        'after 10pm on Friday',
       ],
     },
     {

@@ -2,17 +2,21 @@ terraform {
   required_providers {
     docker = {
       source  = "kreuzwerker/docker"
-      version = "= 3.0.1"
+      version = "3.0.2"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = "6.20.0"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "= 6.15.0"
+      version = "6.20.0"
     }
   }
 }
 
 data "google_service_account" "service_account" {
-  account_id = "${var.name}-cr"
+  account_id = var.gsa
   project    = var.project
 }
 
@@ -45,9 +49,10 @@ resource "google_cloud_run_v2_service" "cloudrun" {
     dynamic "containers" {
       for_each = var.containers
       content {
-        image = containers.value.image
-        name  = containers.value.name
-
+        image   = format("%s@%s", containers.value.image, data.docker_registry_image.image[containers.key].sha256_digest)
+        name    = containers.value.name
+        command = containers.value.command
+        args    = containers.value.args
         dynamic "ports" {
           for_each = containers.value.port != 0 ? [containers.value.port] : []
           content {
@@ -102,6 +107,14 @@ resource "google_cloud_run_v2_service" "cloudrun" {
           }
         }
 
+        dynamic "volume_mounts" {
+          for_each = containers.value.volume_mounts
+          content {
+            name       = volume_mounts.value.name
+            mount_path = volume_mounts.value.mount_path
+          }
+        }
+
         resources {
           cpu_idle = containers.value.gpus == ""
           limits = merge(
@@ -113,6 +126,26 @@ resource "google_cloud_run_v2_service" "cloudrun" {
               "nvidia.com/gpu" = containers.value.gpus
             } : {}
           )
+        }
+      }
+    }
+    dynamic "volumes" {
+      for_each = var.empty_dir_volumes
+      content {
+        name = volumes.value.name
+        empty_dir {
+          medium     = "MEMORY"
+          size_limit = volumes.value.size_limit
+        }
+      }
+    }
+    dynamic "volumes" {
+      for_each = var.gcs_volumes
+      content {
+        name = volumes.value.name
+        gcs {
+          bucket    = volumes.value.bucket
+          read_only = volumes.value.read_only
         }
       }
     }

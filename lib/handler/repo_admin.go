@@ -4,16 +4,13 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/google/go-github/v68/github"
 )
 
 func (h *Handler) RepoAdminToken(w http.ResponseWriter, r *http.Request) {
-	claims, ok := r.Context().Value(claimsKey).(GitHubClaims)
-	if !ok {
-		http.Error(w, "Unauthorized: missing claims in context", http.StatusUnauthorized)
-		return
-	}
+	claims := r.Context().Value(claimsKey).(GitHubClaims)
 	if claims.Repository == "" {
 		http.Error(w, "Invalid request: repository claim is empty", http.StatusBadRequest)
 		return
@@ -21,15 +18,16 @@ func (h *Handler) RepoAdminToken(w http.ResponseWriter, r *http.Request) {
 
 	opts := &github.InstallationTokenOptions{
 		Repositories: []string{
-			claims.Repository,
+			strings.Split(claims.Repository, "/")[1],
 		},
 		Permissions: &github.InstallationPermissions{
 			Administration: github.Ptr("write"),
+			Secrets:        github.Ptr("write"),
 		},
 	}
 	token, _, err := h.githubClient.Apps.CreateInstallationToken(r.Context(), h.githubInstallationId, opts)
 	if err != nil {
-		slog.Error("Error fetching scoped token", "err", err, "claims", claims)
+		slog.Error("Error fetching scoped token", "err", err, "claims", claims, "opts", opts)
 		http.Error(w, "Internal error.", http.StatusInternalServerError)
 		return
 	}

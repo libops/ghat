@@ -15,7 +15,7 @@ import (
 
 type contextKey string
 
-const claimsKey contextKey = "claims"
+const claimsKey contextKey = "githubClaims"
 
 const githubKeysURL = "https://token.actions.githubusercontent.com/.well-known/jwks"
 
@@ -73,10 +73,12 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func verifyJWT(tokenString string) (*GitHubClaims, error) {
+func verifyJWT(tokenString string) (GitHubClaims, error) {
+	var claims GitHubClaims
+
 	keySet, err := fetchJWKS()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to fetch JWKS: %v", err)
+		return claims, fmt.Errorf("Unable to fetch JWKS: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -88,23 +90,22 @@ func verifyJWT(tokenString string) (*GitHubClaims, error) {
 		jwt.WithContext(ctx),
 		jwt.WithVerify(true))
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse token: %v", err)
+		return claims, fmt.Errorf("Unable to parse token: %v", err)
 	}
 
 	if err := validateClaims(token); err != nil {
-		return nil, fmt.Errorf("Unable to validate claims: %v", err)
+		return claims, fmt.Errorf("Unable to validate claims: %v", err)
 	}
 	rawClaims, err := json.Marshal(token)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal claims: %v", err)
+		return claims, fmt.Errorf("failed to marshal claims: %v", err)
 	}
 
-	var claims GitHubClaims
 	if err := json.Unmarshal(rawClaims, &claims); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal claims: %v", err)
+		return claims, fmt.Errorf("failed to unmarshal claims: %v", err)
 	}
 
-	return &claims, nil
+	return claims, nil
 }
 
 func fetchJWKS() (jwk.Set, error) {

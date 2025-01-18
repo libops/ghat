@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine3.20@sha256:6a8532e5441593becc88664617107ed567cb6862cb8b2d87eb33b7ee750f653c
+FROM golang:1.24-alpine3.20@sha256:9fed4022a220fb64327baa90cddfd98607f3b816cb4f5769187500571f73072d
 
 WORKDIR /app
 
@@ -6,12 +6,14 @@ RUN adduser -S -G nobody ghat
 
 COPY . ./
 
-RUN chown -R ghat:nobody /app
+RUN mkdir -p /vault/secrets && \
+  chown -R ghat:nobody /app /vault
 
-RUN go mod download && \
+RUN apk add --no-cache openssl bash && \
+  go mod download && \
   go build -o /app/ghat && \
   go clean -cache -modcache
 
 USER ghat
 
-ENTRYPOINT ["/app/ghat"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
