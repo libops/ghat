@@ -17,17 +17,25 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.Use(handler.LoggingMiddleware)
-	r.Use(handler.JWTAuthMiddleware)
-	r.HandleFunc("/repo/admin", wh.RepoAdminToken).Methods("POST")
-	r.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte(`ok`))
+	r.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte("ok"))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			slog.Error("Unable to write for healthcheck")
+			slog.Error("Unable to write for healthcheck", "error", err)
 		}
 	}).Methods("GET")
 
+	authRouter := r.PathPrefix("/").Subrouter()
+	authRouter.Use(handler.LoggingMiddleware)
+	authRouter.Use(handler.JWTAuthMiddleware)
+	authRouter.HandleFunc("/repo/admin", wh.RepoAdminToken).Methods("POST")
+	authRouter.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte(`ok`))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			slog.Error("Unable to write for healthcheck", "error", err)
+		}
+	})
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

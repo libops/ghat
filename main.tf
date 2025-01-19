@@ -37,6 +37,7 @@ provider "docker" {
 module "vault" {
   source  = "./modules/vault"
   project = var.project
+  name    = "ghat"
 }
 
 module "ghat" {
@@ -44,6 +45,7 @@ module "ghat" {
 
   name    = "ghat"
   project = var.project
+  gsa     = module.vault.gsa
   containers = [
     {
       name           = "ghat",

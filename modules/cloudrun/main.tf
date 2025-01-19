@@ -16,7 +16,7 @@ terraform {
 }
 
 data "google_service_account" "service_account" {
-  account_id = "${var.name}-cr"
+  account_id = var.gsa
   project    = var.project
 }
 
