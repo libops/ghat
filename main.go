@@ -28,7 +28,7 @@ func main() {
 	authRouter := r.PathPrefix("/").Subrouter()
 	authRouter.Use(handler.LoggingMiddleware)
 	authRouter.Use(handler.JWTAuthMiddleware)
-	authRouter.HandleFunc("/repo/admin", wh.RepoAdminToken).Methods("POST")
+	authRouter.HandleFunc("/repo/admin", wh.RepoAdminToken).Methods("GET")
 	authRouter.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte(`ok`))
 		if err != nil {
