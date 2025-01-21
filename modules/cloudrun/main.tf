@@ -2,15 +2,15 @@ terraform {
   required_providers {
     docker = {
       source  = "kreuzwerker/docker"
-      version = "= 3.0.1"
+      version = "3.0.2"
     }
     google = {
       source  = "hashicorp/google"
-      version = "= 6.15.0"
+      version = "6.16.0"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "= 6.15.0"
+      version = "6.16.0"
     }
   }
 }
