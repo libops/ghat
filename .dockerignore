@@ -8,3 +8,4 @@ docker-compose.yml
 .git
 modules
 **.tf
+*.json
