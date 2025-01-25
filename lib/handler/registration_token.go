@@ -9,11 +9,7 @@ import (
 )
 
 func (h *Handler) RepoAdminToken(w http.ResponseWriter, r *http.Request) {
-	claims, ok := r.Context().Value(claimsKey).(GitHubClaims)
-	if !ok {
-		http.Error(w, "Unauthorized: missing claims in context", http.StatusUnauthorized)
-		return
-	}
+	claims := r.Context().Value(claimsKey).(GitHubClaims)
 	if claims.Repository == "" {
 		http.Error(w, "Invalid request: repository claim is empty", http.StatusBadRequest)
 		return

@@ -15,7 +15,7 @@ import (
 
 type contextKey string
 
-const claimsKey contextKey = "claims"
+const claimsKey contextKey = "githubClaims"
 
 const githubKeysURL = "https://token.actions.githubusercontent.com/.well-known/jwks"
 
