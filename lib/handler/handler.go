@@ -35,7 +35,7 @@ func NewHandler() (*Handler, error) {
 	installationId := loadEnvInt64("GITHUB_INSTALL_ID")
 	privateKeyPath := loadEnv("GITHUB_APP_PRIVATE_KEY")
 	tr := http.DefaultTransport
-	itr, err := ghinstallation.NewKeyFromFile(tr, appId, installationId, privateKeyPath)
+	itr, err := ghinstallation.NewAppsTransportKeyFromFile(tr, appId, privateKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create installation transport: %v", err)
 	}

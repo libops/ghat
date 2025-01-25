@@ -26,7 +26,7 @@ func (h *Handler) RepoAdminToken(w http.ResponseWriter, r *http.Request) {
 	}
 	token, _, err := h.githubClient.Apps.CreateInstallationToken(r.Context(), h.githubInstallationId, opts)
 	if err != nil {
-		slog.Error("Error fetching scoped token", "err", err, "claims", claims)
+		slog.Error("Error fetching scoped token", "err", err, "claims", claims, "opts", opts)
 		http.Error(w, "Internal error.", http.StatusInternalServerError)
 		return
 	}

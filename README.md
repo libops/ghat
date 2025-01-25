@@ -1,5 +1,5 @@
 # ghat
-[![integration-test](https://github.com/libops/ghat/actions/workflows/deploy.yml/badge.svg)](https://github.com/libops/ghat/rollout/actions/workflows/deploy.yml)
+[![integration-test](https://github.com/libops/ghat/actions/workflows/deploy.yml/badge.svg)](https://github.com/libops/ghat/actions/workflows/deploy.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/libops/ghat)](https://goreportcard.com/report/github.com/libops/ghat)
 
 GitHub App Token
