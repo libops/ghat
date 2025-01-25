@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/google/go-github/v68/github"
 )
@@ -17,7 +18,7 @@ func (h *Handler) RepoAdminToken(w http.ResponseWriter, r *http.Request) {
 
 	opts := &github.InstallationTokenOptions{
 		Repositories: []string{
-			claims.Repository,
+			strings.Split(claims.Repository, "/")[1],
 		},
 		Permissions: &github.InstallationPermissions{
 			Administration: github.Ptr("write"),
