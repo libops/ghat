@@ -22,6 +22,7 @@ func (h *Handler) RepoAdminToken(w http.ResponseWriter, r *http.Request) {
 		},
 		Permissions: &github.InstallationPermissions{
 			Administration: github.Ptr("write"),
+			Secrets:        github.Ptr("write"),
 		},
 	}
 	token, _, err := h.githubClient.Apps.CreateInstallationToken(r.Context(), h.githubInstallationId, opts)
