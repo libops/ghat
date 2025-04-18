@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v68/github"
+	"github.com/google/go-github/v69/github"
 )
 
 type GitHubClaims struct {
