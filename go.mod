@@ -4,7 +4,6 @@ go 1.23.4
 
 require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.15.0
-	github.com/google/go-github/v68 v68.0.0
 	github.com/google/go-github/v69 v69.2.0
 	github.com/gorilla/mux v1.8.1
 	github.com/lestrrat-go/jwx/v2 v2.1.5
