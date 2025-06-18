@@ -78,7 +78,7 @@ func verifyJWT(tokenString string) (GitHubClaims, error) {
 
 	keySet, err := fetchJWKS()
 	if err != nil {
-		return claims, fmt.Errorf("Unable to fetch JWKS: %v", err)
+		return claims, fmt.Errorf("unable to fetch JWKS: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -90,11 +90,11 @@ func verifyJWT(tokenString string) (GitHubClaims, error) {
 		jwt.WithContext(ctx),
 		jwt.WithVerify(true))
 	if err != nil {
-		return claims, fmt.Errorf("Unable to parse token: %v", err)
+		return claims, fmt.Errorf("unable to parse token: %v", err)
 	}
 
 	if err := validateClaims(token); err != nil {
-		return claims, fmt.Errorf("Unable to validate claims: %v", err)
+		return claims, fmt.Errorf("unable to validate claims: %v", err)
 	}
 	rawClaims, err := json.Marshal(token)
 	if err != nil {
@@ -116,9 +116,10 @@ func fetchJWKS() (jwk.Set, error) {
 }
 
 func validateClaims(token jwt.Token) error {
-	iss, ok := token.Get("iss")
-	if !ok || iss != "https://token.actions.githubusercontent.com" {
-		return fmt.Errorf("invalid issuer: %v", iss)
+	var iss string
+	err := token.Get("iss", &iss)
+	if err != nil {
+		return err
 	}
 
 	claims := map[string]string{
@@ -126,9 +127,10 @@ func validateClaims(token jwt.Token) error {
 		"repository_owner": "libops",
 	}
 	for c, expectedValue := range claims {
-		claim, ok := token.Get(c)
-		if !ok {
-			return fmt.Errorf("%s claim not found", c)
+		var claim any
+		err := token.Get(c, &claim)
+		if err != nil {
+			return err
 		}
 		found := false
 		switch v := claim.(type) {
