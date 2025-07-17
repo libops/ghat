@@ -5,10 +5,6 @@ terraform {
       source  = "kreuzwerker/docker"
       version = "3.6.2"
     }
-    github = {
-      source  = "integrations/github"
-      version = "6.6.0"
-    }
     google = {
       source  = "hashicorp/google"
       version = "6.44.0"
@@ -27,7 +23,6 @@ provider "google" {
 }
 
 provider "docker" {
-  alias = "local"
   registry_auth {
     address     = "us-docker.pkg.dev"
     config_file = pathexpand("~/.docker/config.json")
@@ -40,6 +35,10 @@ module "vault" {
   name    = "ghat"
 }
 
+data "docker_registry_image" "image" {
+  name = "us-docker.pkg.dev/${var.project}/private/ghat:main"
+}
+
 module "ghat" {
   source = "git::https://github.com/libops/terraform-cloudrun-v2?ref=0.1.2"
 
@@ -49,7 +48,7 @@ module "ghat" {
   containers = [
     {
       name           = "ghat",
-      image          = "us-docker.pkg.dev/${var.project}/private/ghat:main@sha256:ca6c7343275bae53c8dcb66a18bcf0362324d6136ae6fd7c1422465eeb7b262b",
+      image          = format("%s@%s", data.docker_registry_image.image.name, data.docker_registry_image.image.sha256_digest)
       port           = 8080,
       liveness_probe = "/healthcheck",
       memory         = "512Mi",
