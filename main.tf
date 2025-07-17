@@ -41,7 +41,7 @@ module "vault" {
 }
 
 module "ghat" {
-  source = "./modules/cloudrun"
+  source = "git::https://github.com/libops/terraform-cloudrun-v2?ref=0.1.2"
 
   name    = "ghat"
   project = var.project
@@ -49,7 +49,7 @@ module "ghat" {
   containers = [
     {
       name           = "ghat",
-      image          = "us-docker.pkg.dev/${var.project}/private/ghat:main",
+      image          = "us-docker.pkg.dev/${var.project}/private/ghat:main@sha256:ca6c7343275bae53c8dcb66a18bcf0362324d6136ae6fd7c1422465eeb7b262b",
       port           = 8080,
       liveness_probe = "/healthcheck",
       memory         = "512Mi",
@@ -63,7 +63,7 @@ module "ghat" {
     },
     {
       name   = "vault",
-      image  = "hashicorp/vault:1.18.3",
+      image  = "hashicorp/vault:1.18.3@sha256:8f1ba670da547c6af67be55609bd285c3ee3d8b73f88021adbfc43c82ca409e8",
       memory = "512Mi",
       cpu    = "500m",
       args = [
@@ -114,6 +114,5 @@ module "ghat" {
   ])
   providers = {
     google = google.default
-    docker = docker.local
   }
 }
