@@ -3,7 +3,7 @@ module github.com/libops/ghat
 go 1.23.4
 
 require (
-	github.com/bradleyfalzon/ghinstallation/v2 v2.16.1-0.20250708174505-fed36855fcdc
+	github.com/bradleyfalzon/ghinstallation/v2 v2.16.1-0.20250708174525-a41d4c3351f9
 	github.com/google/go-github/v73 v73.0.0
 	github.com/gorilla/mux v1.8.1
 	github.com/lestrrat-go/jwx/v3 v3.0.8
