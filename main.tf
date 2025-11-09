@@ -63,7 +63,7 @@ module "ghat" {
     {
       name   = "vault",
       image  = "hashicorp/vault:1.21.0@sha256:62dd55c9ccbdc0af0a9269e87481a64650258907434d5ddb5e795e2eb2ac5780",
-      memory = "512Mi",
+      memory = "1Gi",
       cpu    = "500m",
       args = [
         "agent",
