@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-github/v73/github"
+	"github.com/google/go-github/v78/github"
 )
 
 func (h *Handler) RepoAdminToken(w http.ResponseWriter, r *http.Request) {
