@@ -7,7 +7,7 @@ terraform {
     }
     google = {
       source  = "hashicorp/google"
-      version = "7.10.0"
+      version = "7.14.1"
     }
   }
 
@@ -40,7 +40,7 @@ data "docker_registry_image" "image" {
 }
 
 module "ghat" {
-  source = "git::https://github.com/libops/terraform-cloudrun-v2?ref=0.3.3"
+  source = "git::https://github.com/libops/terraform-cloudrun-v2?ref=0.5.0"
 
   name    = "ghat"
   project = var.project
@@ -62,7 +62,7 @@ module "ghat" {
     },
     {
       name   = "vault",
-      image  = "hashicorp/vault:1.21.0@sha256:62dd55c9ccbdc0af0a9269e87481a64650258907434d5ddb5e795e2eb2ac5780",
+      image  = "hashicorp/vault:1.21.1@sha256:f4e2687b72858a9e2160c344c9fa1ef74c07f21a89a8c00534ab64d3f187b927",
       memory = "1Gi",
       cpu    = "500m",
       args = [
